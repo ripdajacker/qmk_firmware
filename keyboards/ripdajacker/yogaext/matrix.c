@@ -22,6 +22,7 @@
 #include "print.h"
 #include "debug.h"
 #include "util.h"
+#include "led.h"
 #include "config.h"
 #include "matrix.h"
 #include "quantum.h"
@@ -183,4 +184,18 @@ static void select_col(uint8_t col) {
         shift_out(0);
         writePinHigh(COL_SEVENTEEN);
     }
+}
+
+void led_set_kb(uint8_t usb_led) {
+    led_t leds = (led_t)usb_led;
+
+    writePin(PIN_CAPS_LOCK, leds.caps_lock);
+    writePin(PIN_NUM_LOCK, leds.num_lock);
+
+    led_set_user(usb_led);
+}
+
+void led_init_ports(void) {
+    setPinOutput(PIN_CAPS_LOCK);
+    setPinOutput(PIN_NUM_LOCK);
 }
