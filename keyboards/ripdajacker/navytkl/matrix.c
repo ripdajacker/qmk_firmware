@@ -14,7 +14,6 @@
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-#include "navytkl.h"
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -26,12 +25,14 @@
 #include "led.h"
 #include "config.h"
 #include "matrix.h"
-#include "navytkl.h"
 #include "quantum.h"
 
 #ifndef DEBOUNCE
 #    define DEBOUNCE 5
 #endif
+
+
+static const uint16_t col_values[16] = SHR_COLS;
 
 static uint8_t debouncing = DEBOUNCE;
 
@@ -40,6 +41,10 @@ static matrix_row_t matrix_debouncing[MATRIX_ROWS];
 
 static uint8_t read_rows(void);
 static void    select_col(uint8_t col);
+
+static void    shift_pulse(void);
+static void    shift_out_single(uint8_t value);
+static void    shift_out(uint16_t value);
 
 __attribute__((weak)) void matrix_init_kb(void) { matrix_init_user(); }
 
@@ -60,22 +65,17 @@ inline uint8_t matrix_cols(void) { return MATRIX_COLS; }
  * The columns are scanned using two 74hc595 in series on pins defined in config.h.
  */
 void matrix_init(void) {
-    setPinInputHigh(ROW_A);
-    setPinInputHigh(ROW_B);
-    setPinInputHigh(ROW_C);
-    setPinInputHigh(ROW_D);
-    setPinInputHigh(ROW_E);
-    setPinInputHigh(ROW_F);
+    setPinInput(ROW_A);
+    setPinInput(ROW_B);
+    setPinInput(ROW_C);
+    setPinInput(ROW_D);
+    setPinInput(ROW_E);
+    setPinInput(ROW_F);
 
-    setPinOutput(DEMUX_ENABLE);
-
-    setPinOutput(DEMUX_A0);
-    setPinOutput(DEMUX_A1);
-    setPinOutput(DEMUX_A2);
-    setPinOutput(DEMUX_A3);
+    setPinOutput(SHR_DATA);
+    setPinOutput(SHR_LATCH);
+    setPinOutput(SHR_CLOCK);
     setPinOutput(COL_SEVENTEEN);
-
-    writePin(COL_SEVENTEEN, 1);
 
     for (uint8_t i = 0; i < MATRIX_ROWS; i++) {
         matrix[i]            = 0;
@@ -139,40 +139,58 @@ uint8_t matrix_key_count(void) {
 }
 
 static uint8_t read_rows(void) {
-    return (readPin(ROW_F) ? 0: (1<< 5))
-    | (readPin(ROW_E) ? 0 : (1<< 4))
-    | (readPin(ROW_D) ? 0 : (1 << 3))
-    | (readPin(ROW_C) ? 0 : (1 << 2))
-    | (readPin(ROW_B) ? 0 : (1 << 1))
-    | (readPin(ROW_A) ? 0 : 1);
+     return (readPin(ROW_F) << 5)
+     | (readPin(ROW_E) << 4)
+     | (readPin(ROW_D) << 3)
+     | (readPin(ROW_C) << 2)
+     | (readPin(ROW_B) << 1)
+     | (readPin(ROW_A) );
+}
+
+static inline void shift_pulse(void) {
+    writePinHigh(SHR_CLOCK);
+    writePinLow(SHR_CLOCK);
+}
+
+static void shift_out_single(uint8_t value) {
+    for (uint8_t i = 0; i < 8; i++) {
+        if (value & 0b10000000) {
+            writePinHigh(SHR_DATA);
+        } else {    
+            writePinLow(SHR_DATA);
+        }
+
+        shift_pulse();
+        value = value << 1;
+    }
+}
+
+static void shift_out(uint16_t value) {
+    uint8_t first_byte = (value >> 8) & 0xFF;
+    uint8_t second_byte = (uint8_t)(value & 0xFF);
+
+    writePinLow(SHR_LATCH);
+    shift_out_single(first_byte);
+    shift_out_single(second_byte);
+    writePinHigh(SHR_LATCH);
 }
 
 static void select_col(uint8_t col) {
-    if (col == 17) {
-        writePinHigh(DEMUX_ENABLE);
+    // SHIFT out columns 0 to 15
+    if (col < 16) {
+        shift_out(col_values[col]);
         writePinLow(COL_SEVENTEEN);
     } else {
-        uint8_t bit0 = col & 0b0001;
-        uint8_t bit1 = col & 0b0010;
-        uint8_t bit2 = col & 0b0100;
-        uint8_t bit3 = col & 0b1000;
-
-        writePinLow(DEMUX_ENABLE);
+        shift_out(0);
         writePinHigh(COL_SEVENTEEN);
-
-        writePin(DEMUX_A0, bit0);
-        writePin(DEMUX_A1, bit1);
-        writePin(DEMUX_A2, bit2);
-        writePin(DEMUX_A3, bit3);
-        _delay_us(1);
     }
 }
 
 void led_set_kb(uint8_t usb_led) {
-    led_t leds = (led_t)usb_led;
+    //led_t leds = (led_t)usb_led;
 
-    writePin(PIN_CAPS_LOCK, leds.caps_lock);
-    writePin(PIN_NUM_LOCK, leds.num_lock);
+ //   writePin(PIN_CAPS_LOCK, leds.caps_lock);
+  //  writePin(PIN_NUM_LOCK, leds.num_lock);
 
     led_set_user(usb_led);
 }

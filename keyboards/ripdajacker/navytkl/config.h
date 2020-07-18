@@ -23,16 +23,15 @@
 #define ROW_F  D7
 
 /* columns 0 - 16 */
-#define DEMUX_ENABLE B2
-#define DEMUX_A0 B6
-#define DEMUX_A1 B2
-#define DEMUX_A2 B3
-#define DEMUX_A3 B1
+#define SHR_LATCH B3
+#define SHR_CLOCK B2    
+#define SHR_DATA B1
 
-#define COL_SEVENTEEN F5
+#define SHR_COLS {  0x0100, 0x0200, 0x0400, 0x0800, 0x1000, 0x2000, 0x4000, 0x8000, 0x0001, 0x0002, 0x0004, 0x0008, 0x0010, 0x0020, 0x0040, 0x0080 }
+#define COL_SEVENTEEN B6
 
-#define PIN_CAPS_LOCK F7
-#define PIN_NUM_LOCK  F6
+#define PIN_CAPS_LOCK B4
+#define PIN_NUM_LOCK  B5
 
 
 #define UNUSED_PINS
