@@ -87,7 +87,7 @@ void matrix_init(void) {
 uint8_t matrix_scan(void) {
     for (uint8_t col = 0; col < MATRIX_COLS; col++) {
         select_col(col);
-        _delay_us(3);
+        _delay_us(10);
         uint8_t rows = read_rows();
         for (uint8_t row = 0; row < MATRIX_ROWS; row++) {
             bool prev_bit = matrix_debouncing[row] & ((matrix_row_t)1 << col);
@@ -187,15 +187,15 @@ static void select_col(uint8_t col) {
 }
 
 void led_set_kb(uint8_t usb_led) {
-    //led_t leds = (led_t)usb_led;
+    led_t leds = (led_t)usb_led;
 
- //   writePin(PIN_CAPS_LOCK, leds.caps_lock);
-  //  writePin(PIN_NUM_LOCK, leds.num_lock);
+    writePin(PIN_CAPS_LOCK, leds.caps_lock);
+    writePin(PIN_SCROLL_LOCK, leds.scroll_lock);
 
     led_set_user(usb_led);
 }
 
 void led_init_ports(void) {
     setPinOutput(PIN_CAPS_LOCK);
-    setPinOutput(PIN_NUM_LOCK);
+    setPinOutput(PIN_SCROLL_LOCK);
 }
