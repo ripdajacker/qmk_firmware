@@ -87,7 +87,7 @@ void matrix_init(void) {
 uint8_t matrix_scan(void) {
     for (uint8_t col = 0; col < MATRIX_COLS; col++) {
         select_col(col);
-        _delay_us(10);
+        _delay_us(3);
         uint8_t rows = read_rows();
         for (uint8_t row = 0; row < MATRIX_ROWS; row++) {
             bool prev_bit = matrix_debouncing[row] & ((matrix_row_t)1 << col);
@@ -156,7 +156,7 @@ static void shift_out_single(uint8_t value) {
     for (uint8_t i = 0; i < 8; i++) {
         if (value & 0b10000000) {
             writePinHigh(SHR_DATA);
-        } else {    
+        } else {
             writePinLow(SHR_DATA);
         }
 
